@@ -1,0 +1,772 @@
+# ============================================================
+# k-NEAREST NEIGHBOUR (k-NN) CLASSIFICATION
+# Cardiovascular Risk Prediction
+# ============================================================
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+
+# ============================================================
+# PART A - DATA PREPROCESSING
+# ============================================================
+
+# 1. Load dataset
+df = pd.read_csv("heart_risk_dataset.csv")
+
+print("First 5 rows:")
+print(df.head())
+
+print("\nShape:")
+print(df.shape)
+
+print("\nColumns:")
+print(df.columns)
+
+print("\nData Types:")
+print(df.dtypes)
+
+print("\nInformation:")
+print(df.info())
+
+print("\nSummary Statistics:")
+print(df.describe(include="all"))
+
+print("\nMissing Values:")
+print(df.isnull().sum())
+
+
+# ------------------------------------------------------------
+# 2. Remove duplicate rows
+# ------------------------------------------------------------
+
+df = df.drop_duplicates()
+
+
+# ------------------------------------------------------------
+# 3. Separate numerical and categorical columns
+# ------------------------------------------------------------
+
+num_cols = df.select_dtypes(include="number").columns
+cat_cols = df.select_dtypes(include="object").columns
+
+print("\nNumerical Columns:")
+print(num_cols)
+
+print("\nCategorical Columns:")
+print(cat_cols)
+
+
+# ------------------------------------------------------------
+# 4. Handle missing numerical values
+# ------------------------------------------------------------
+
+# Mean imputation
+df_mean = df.copy()
+
+for col in num_cols:
+    df_mean[col] = df_mean[col].fillna(df_mean[col].mean())
+
+
+# Median imputation
+df_median = df.copy()
+
+for col in num_cols:
+    df_median[col] = df_median[col].fillna(df_median[col].median())
+
+
+print("\nMissing values after Mean:")
+print(df_mean.isnull().sum())
+
+print("\nMissing values after Median:")
+print(df_median.isnull().sum())
+
+
+# We will use mean-imputed dataset
+df = df_mean.copy()
+
+
+# ------------------------------------------------------------
+# 5. Handle categorical missing values using mode
+# ------------------------------------------------------------
+
+cat_cols = df.select_dtypes(include="object").columns
+
+for col in cat_cols:
+    df[col] = df[col].fillna(df[col].mode()[0])
+
+
+print("\nMissing values after categorical handling:")
+print(df.isnull().sum())
+
+
+# ============================================================
+# 6. OUTLIER DETECTION USING BOX PLOT + IQR
+# ============================================================
+
+# Box plots before removing outliers
+
+plt.figure(figsize=(12, 6))
+df[num_cols].boxplot()
+plt.title("Box Plot Before Outlier Removal")
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.show()
+
+
+# IQR outlier removal
+
+for col in num_cols:
+
+    Q1 = df[col].quantile(0.25)
+    Q3 = df[col].quantile(0.75)
+
+    IQR = Q3 - Q1
+
+    lower = Q1 - 1.5 * IQR
+    upper = Q3 + 1.5 * IQR
+
+    df = df[
+        (df[col] >= lower) &
+        (df[col] <= upper)
+    ]
+
+
+# Box plots after removing outliers
+
+plt.figure(figsize=(12, 6))
+df[num_cols].boxplot()
+plt.title("Box Plot After Outlier Removal")
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.show()
+
+
+# ============================================================
+# 7. ENCODING CATEGORICAL ATTRIBUTES
+# ============================================================
+
+# Label encoding using pandas factorize
+
+for col in df.select_dtypes(include="object").columns:
+
+    df[col] = pd.factorize(df[col])[0]
+
+
+print("\nData after encoding:")
+print(df.head())
+
+
+# ============================================================
+# 8. SEPARATE FEATURES AND TARGET
+# ============================================================
+
+X = df.drop("RiskClass", axis=1).values
+y = df["RiskClass"].values
+
+
+# ============================================================
+# 9. MIN-MAX NORMALIZATION
+# ============================================================
+
+def min_max_scaling(X):
+
+    minimum = X.min(axis=0)
+    maximum = X.max(axis=0)
+
+    return (X - minimum) / (maximum - minimum + 1e-10)
+
+
+X_minmax = min_max_scaling(X)
+
+
+# ============================================================
+# 10. Z-SCORE NORMALIZATION
+# ============================================================
+
+def z_score_scaling(X):
+
+    mean = X.mean(axis=0)
+    std = X.std(axis=0)
+
+    return (X - mean) / (std + 1e-10)
+
+
+X_zscore = z_score_scaling(X)
+
+
+# ============================================================
+# TRAIN / TEST SPLIT
+# ============================================================
+
+split_index = int(len(X) * 0.8)
+
+X_train_minmax = X_minmax[:split_index]
+X_test_minmax = X_minmax[split_index:]
+
+X_train_zscore = X_zscore[:split_index]
+X_test_zscore = X_zscore[split_index:]
+
+y_train = y[:split_index]
+y_test = y[split_index:]
+
+
+# ============================================================
+# PART B - DISTANCE FUNCTIONS
+# ============================================================
+
+
+# ------------------------------------------------------------
+# 1. Euclidean Distance
+# ------------------------------------------------------------
+
+def euclidean_distance(x1, x2):
+
+    distance = 0
+
+    for i in range(len(x1)):
+        distance += (x1[i] - x2[i]) ** 2
+
+    return np.sqrt(distance)
+
+
+# ------------------------------------------------------------
+# 2. Manhattan Distance
+# ------------------------------------------------------------
+
+def manhattan_distance(x1, x2):
+
+    distance = 0
+
+    for i in range(len(x1)):
+        distance += abs(x1[i] - x2[i])
+
+    return distance
+
+
+# ------------------------------------------------------------
+# 3. Minkowski Distance
+# ------------------------------------------------------------
+
+def minkowski_distance(x1, x2, p=3):
+
+    distance = 0
+
+    for i in range(len(x1)):
+        distance += abs(x1[i] - x2[i]) ** p
+
+    return distance ** (1 / p)
+
+
+# ------------------------------------------------------------
+# 4. Cosine Distance
+# ------------------------------------------------------------
+
+def cosine_distance(x1, x2):
+
+    dot_product = np.dot(x1, x2)
+
+    magnitude1 = np.sqrt(np.sum(x1 ** 2))
+    magnitude2 = np.sqrt(np.sum(x2 ** 2))
+
+    similarity = dot_product / (
+        magnitude1 * magnitude2 + 1e-10
+    )
+
+    return 1 - similarity
+
+
+# ------------------------------------------------------------
+# 5. Chebyshev Distance
+# ------------------------------------------------------------
+
+def chebyshev_distance(x1, x2):
+
+    distance = 0
+
+    for i in range(len(x1)):
+
+        difference = abs(x1[i] - x2[i])
+
+        distance = max(distance, difference)
+
+    return distance
+
+
+# ============================================================
+# PART B - GET DISTANCES TO EVERY TRAINING INSTANCE
+# ============================================================
+
+def get_all_distances(X_train, y_train, test_sample, method):
+
+    distances = []
+
+    for i in range(len(X_train)):
+
+        if method == "euclidean":
+            dist = euclidean_distance(
+                test_sample,
+                X_train[i]
+            )
+
+        elif method == "manhattan":
+            dist = manhattan_distance(
+                test_sample,
+                X_train[i]
+            )
+
+        elif method == "minkowski":
+            dist = minkowski_distance(
+                test_sample,
+                X_train[i]
+            )
+
+        elif method == "cosine":
+            dist = cosine_distance(
+                test_sample,
+                X_train[i]
+            )
+
+        elif method == "chebyshev":
+            dist = chebyshev_distance(
+                test_sample,
+                X_train[i]
+            )
+
+        distances.append((dist, y_train[i]))
+
+    return distances
+
+
+# Display distances for one test sample
+
+test_sample = X_test_minmax[0]
+
+all_distances = get_all_distances(
+    X_train_minmax,
+    y_train,
+    test_sample,
+    "euclidean"
+)
+
+print("\nDistances to every training instance:")
+
+for i, item in enumerate(all_distances):
+
+    print(
+        "Training Index:",
+        i,
+        "Distance:",
+        round(item[0], 4),
+        "Class:",
+        item[1]
+    )
+
+
+# ============================================================
+# PART C - k-NN FROM SCRATCH
+# ============================================================
+
+
+# ------------------------------------------------------------
+# Find k nearest neighbours
+# ------------------------------------------------------------
+
+def get_neighbors(
+    X_train,
+    y_train,
+    test_sample,
+    k,
+    method
+):
+
+    distances = []
+
+    for i in range(len(X_train)):
+
+        if method == "euclidean":
+
+            dist = euclidean_distance(
+                test_sample,
+                X_train[i]
+            )
+
+        elif method == "manhattan":
+
+            dist = manhattan_distance(
+                test_sample,
+                X_train[i]
+            )
+
+        elif method == "minkowski":
+
+            dist = minkowski_distance(
+                test_sample,
+                X_train[i]
+            )
+
+        elif method == "cosine":
+
+            dist = cosine_distance(
+                test_sample,
+                X_train[i]
+            )
+
+        elif method == "chebyshev":
+
+            dist = chebyshev_distance(
+                test_sample,
+                X_train[i]
+            )
+
+        distances.append(
+            (dist, y_train[i])
+        )
+
+    # Sort by distance
+    distances.sort(
+        key=lambda x: x[0]
+    )
+
+    # Select k nearest
+    return distances[:k]
+
+
+# ------------------------------------------------------------
+# Majority Voting
+# ------------------------------------------------------------
+
+def predict_class(neighbors):
+
+    votes = {}
+
+    for distance, label in neighbors:
+
+        if label not in votes:
+            votes[label] = 0
+
+        votes[label] += 1
+
+    return max(
+        votes,
+        key=votes.get
+    )
+
+
+# ------------------------------------------------------------
+# k-NN Prediction
+# ------------------------------------------------------------
+
+def knn_predict(
+    X_train,
+    y_train,
+    X_test,
+    k,
+    method
+):
+
+    predictions = []
+
+    for sample in X_test:
+
+        neighbors = get_neighbors(
+            X_train,
+            y_train,
+            sample,
+            k,
+            method
+        )
+
+        prediction = predict_class(
+            neighbors
+        )
+
+        predictions.append(prediction)
+
+    return predictions
+
+
+# ============================================================
+# ACCURACY
+# ============================================================
+
+def accuracy_score(actual, predicted):
+
+    correct = 0
+
+    for i in range(len(actual)):
+
+        if actual[i] == predicted[i]:
+            correct += 1
+
+    return (
+        correct / len(actual)
+    ) * 100
+
+
+# ============================================================
+# NORMAL k-NN
+# ============================================================
+
+k = 5
+
+predictions = knn_predict(
+    X_train_minmax,
+    y_train,
+    X_test_minmax,
+    k,
+    "euclidean"
+)
+
+accuracy = accuracy_score(
+    y_test,
+    predictions
+)
+
+print(
+    "\nNormal k-NN Accuracy:",
+    round(accuracy, 2),
+    "%"
+)
+
+
+# ============================================================
+# PART D - WEIGHTED k-NN
+# ============================================================
+
+def weighted_predict(neighbors):
+
+    votes = {}
+
+    for distance, label in neighbors:
+
+        # Weight formula
+        weight = 1 / (
+            distance + 0.0001
+        )
+
+        if label not in votes:
+            votes[label] = 0
+
+        votes[label] += weight
+
+    return max(
+        votes,
+        key=votes.get
+    )
+
+
+def weighted_knn_predict(
+    X_train,
+    y_train,
+    X_test,
+    k,
+    method
+):
+
+    predictions = []
+
+    for sample in X_test:
+
+        neighbors = get_neighbors(
+            X_train,
+            y_train,
+            sample,
+            k,
+            method
+        )
+
+        prediction = weighted_predict(
+            neighbors
+        )
+
+        predictions.append(prediction)
+
+    return predictions
+
+
+# Weighted k-NN
+
+weighted_predictions = weighted_knn_predict(
+    X_train_minmax,
+    y_train,
+    X_test_minmax,
+    5,
+    "euclidean"
+)
+
+weighted_accuracy = accuracy_score(
+    y_test,
+    weighted_predictions
+)
+
+print(
+    "Weighted k-NN Accuracy:",
+    round(weighted_accuracy, 2),
+    "%"
+)
+
+
+# ============================================================
+# PART E - TEST DIFFERENT k VALUES
+# ============================================================
+
+k_values = [
+    1, 3, 5, 7, 9,
+    11, 13, 15, 17, 19
+]
+
+accuracy_list = []
+
+print("\nAccuracy for different k values:")
+
+for k in k_values:
+
+    preds = knn_predict(
+        X_train_minmax,
+        y_train,
+        X_test_minmax,
+        k,
+        "euclidean"
+    )
+
+    acc = accuracy_score(
+        y_test,
+        preds
+    )
+
+    accuracy_list.append(acc)
+
+    print(
+        "k =",
+        k,
+        "Accuracy =",
+        round(acc, 2),
+        "%"
+    )
+
+
+# ============================================================
+# FIND BEST k
+# ============================================================
+
+best_accuracy = max(
+    accuracy_list
+)
+
+best_k = k_values[
+    accuracy_list.index(best_accuracy)
+]
+
+print("\nBest k:", best_k)
+
+print(
+    "Best Accuracy:",
+    round(best_accuracy, 2),
+    "%"
+)
+
+
+# ============================================================
+# COMPARE DISTANCE METHODS
+# ============================================================
+
+methods = [
+    "euclidean",
+    "manhattan",
+    "minkowski",
+    "cosine",
+    "chebyshev"
+]
+
+print("\nDistance Method Comparison:")
+
+for method in methods:
+
+    predictions = knn_predict(
+        X_train_minmax,
+        y_train,
+        X_test_minmax,
+        5,
+        method
+    )
+
+    acc = accuracy_score(
+        y_test,
+        predictions
+    )
+
+    print(
+        method,
+        ":",
+        round(acc, 2),
+        "%"
+    )
+
+
+# ============================================================
+# COMPARE MIN-MAX AND Z-SCORE
+# ============================================================
+
+pred_minmax = knn_predict(
+    X_train_minmax,
+    y_train,
+    X_test_minmax,
+    5,
+    "euclidean"
+)
+
+pred_zscore = knn_predict(
+    X_train_zscore,
+    y_train,
+    X_test_zscore,
+    5,
+    "euclidean"
+)
+
+acc_minmax = accuracy_score(
+    y_test,
+    pred_minmax
+)
+
+acc_zscore = accuracy_score(
+    y_test,
+    pred_zscore
+)
+
+print("\nNormalization Comparison:")
+
+print(
+    "Min-Max Accuracy:",
+    round(acc_minmax, 2),
+    "%"
+)
+
+print(
+    "Z-Score Accuracy:",
+    round(acc_zscore, 2),
+    "%"
+)
+
+
+# ============================================================
+# ACCURACY GRAPH FOR DIFFERENT k
+# ============================================================
+
+plt.figure(figsize=(8, 5))
+
+plt.plot(
+    k_values,
+    accuracy_list,
+    marker="o"
+)
+
+plt.xlabel("k Value")
+plt.ylabel("Accuracy (%)")
+plt.title("k-NN Accuracy for Different k Values")
+
+plt.grid()
+
+plt.show()
