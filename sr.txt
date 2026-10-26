@@ -1,0 +1,123 @@
+
+# EXPERIMENT 2: SIMPLE LINEAR REGRESSION
+
+#python -m pip install numpy pandas matplotlib seaborn scikit-learn
+
+# Step 1: Import libraries
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import (
+    mean_absolute_error,
+    mean_squared_error,
+    r2_score
+)
+
+# Step 2: Create the dataset
+data = {
+    "Hours": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    "Scores": [20, 25, 35, 40, 50, 55, 65, 70, 85, 95]
+}
+
+df = pd.DataFrame(data)
+
+print("Dataset:")
+print(df)
+
+# Step 3: Separate independent and dependent variables
+X = df[["Hours"]]     # Independent variable
+y = df["Scores"]      # Dependent variable
+
+# Step 4: Split into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y,
+    test_size=0.2,
+    random_state=42
+)
+
+print("\nTraining samples:", len(X_train))
+print("Testing samples:", len(X_test))
+
+# Step 5: Create the linear regression model
+model = LinearRegression()
+
+# Step 6: Train the model
+model.fit(X_train, y_train)
+
+# Step 7: Display the model equation
+print("\nSlope (Coefficient):", model.coef_[0])
+print("Intercept:", model.intercept_)
+
+print(
+    "\nRegression Equation: y =",
+    round(model.coef_[0], 2),
+    "* x +",
+    round(model.intercept_, 2)
+)
+
+# Step 8: Predict the test data
+y_pred = model.predict(X_test)
+
+print("\nActual Scores:")
+print(y_test.to_numpy())
+
+print("\nPredicted Scores:")
+print(np.round(y_pred, 2))
+
+# Step 9: Calculate evaluation metrics
+mae = mean_absolute_error(y_test, y_pred)
+mse = mean_squared_error(y_test, y_pred)
+rmse = np.sqrt(mse)
+r2 = r2_score(y_test, y_pred)
+
+print("\nModel Evaluation")
+print("----------------")
+print("MAE :", round(mae, 2))
+print("MSE :", round(mse, 2))
+print("RMSE:", round(rmse, 2))
+print("R2 Score:", round(r2, 4))
+
+# Step 10: Predict a score for a new value
+hours = pd.DataFrame({"Hours": [6]})
+predicted_score = model.predict(hours)
+
+print(
+    "\nPredicted score for 6 hours:",
+    round(predicted_score[0], 2)
+)
+
+# Step 11: Plot the original data and regression line
+plt.scatter(
+    X["Hours"],
+    y,
+    color="blue",
+    label="Actual Data"
+)
+
+# Plot the fitted line across the full range
+line_x = np.linspace(
+    X["Hours"].min(),
+    X["Hours"].max(),
+    100
+)
+
+line_y = model.predict(
+    pd.DataFrame({"Hours": line_x})
+)
+
+plt.plot(
+    line_x,
+    line_y,
+    color="red",
+    label="Regression Line"
+)
+
+plt.xlabel("Hours Studied")
+plt.ylabel("Exam Score")
+plt.title("Simple Linear Regression")
+plt.legend()
+plt.grid(True)
+plt.show()
