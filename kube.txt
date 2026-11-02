@@ -1,0 +1,126 @@
+Installation Steps
+1.Enable WSL 2 (Windows Subsystem for Linux):Command Prompt / PowerShell.
+Open PowerShell or Command Prompt as an Administrator (Right-click → Run as administrator).
+Run the following command to install WSL:
+ wsl --install 
+      3. Verification: Restart your computer when prompted. Once rebooted, open PowerShell and  verify WSL 2 is installed by typing wsl --status. 
+2. Download Docker Desktop Installer:Official Browser Download.
+Go to the official Docker website: [https://www.docker.com/products/docker-desktop/](https://www.docker.com/products/docker-desktop/).
+Click Download for Windows to download the Docker Desktop Installer.exe file.
+3. Run the Installer:Setup Wizard.
+Locate and double-click Docker Desktop Installer.exe.
+On the Configuration screen:
+Check the box for Use WSL 2 instead of Hyper-V (recommended).
+(Optional) Check the box to add a shortcut to your desktop.
+
+
+Click Ok and wait for the installation files to uncompress and install.
+Click Close and restart to complete the setup process.
+4. Launch & Complete Initial Setup:Docker Desktop Application.
+After restarting Windows, launch Docker Desktop from the Start Menu or desktop shortcut.
+Accept the Docker Subscription Service Agreement when prompted.
+Choose your installation mode (Per-user or All-users) and sign in (or select Continue without signing in).
+Verification: Wait until the status icon in the bottom-left corner of Docker Desktop turns solid Green (indicating Docker Engine is running).
+5. Verify Docker CLI via Terminal:PowerShell / Command Prompt.
+Open PowerShell or Command Prompt.
+Test the Docker Installation and version:
+ docker --version 
+
+
+
+
+
+
+
+Procedure:
+
+Step 1: create a subfolder named dockerlabs under \users\mca
+Step 2 : change directory to dockerlabs
+Step 3: create a container of image hello-world
+
+    docker build-t hello-world
+Program 1:
+Create a container to display “Amal Jyothi College of Engineering” using Python language specifically 3.9 version. 
+
+Step 1 : In your folder create a file named dockerfile without any extension
+Step 2: Copy the following code into it and save:
+
+FROM python:3.9
+CMD echo “Amal Jyothi College of Engineering”;
+
+
+Step 3: Create an image named ajcedocker using the command :
+   docker build -t ajcedocker .
+
+Program 2:
+Write a Python script to declare a variable containing your native place by using Python code display a message “Hello my place is ……” 10 times. Create  a container from the image file 
+
+FROM python:3.9
+ENV MY_PLACE=”Ranni”
+CMD for i in $(seq 1 10); do echo “Hello, my place is $MY_PLACE”; done
+
+
+FROM alpine:latest
+WORKDIR /app
+RUN echo "This is a paragraph of text stored in a file named hello.txt...!">/app/hello.txt
+CMD ["cat","/app/hello.txt"]
+
+Program 4
+ To add to 2 numbers. Use 2 files 
+addnumbers.py- to accept 2 numbers from the console and calculate the sum 
+Second file is a docker file which contains sufficient calls to call the addnumbers.py for finding the sum of 2 numbers
+    
+   
+FROM python:3.11-alpine
+COPY addnumbers.py /addnumbers.py
+CMD ["python","/addnumbers.py"]
+
+addnumbers.py
+num1=int(input("Enter first number:"))
+num2=int(input("Enter second number:"))
+print("Sum: ",num1+num2)
+
+
+Kubectl Basic Commands:
+
+# Verify kubectl version (client and server) 
+  kubectl version --client 
+
+# Check cluster connection details
+  kubectl cluster-info 
+
+# View cluster nodes and their status (Ready/NotReady)
+  kubectl get nodes
+
+ # View overall resource usage of nodes
+  kubectl top nodes 
+
+Pods Management Commands:
+
+# Create and start a basic Nginx pod
+ kubectl run nginx-pod --image=nginx:latest 
+
+# List all pods in the default namespace 
+kubectl get pods 
+
+# Delete a pod by name 
+kubectl delete pod test-pod 
+
+
+
+CO4: Deploy, manage, and scale containerized applications using Kubernetes, including the configuration of Pods, Deployments, ReplicaSets, and Services.
+ 
+Procedure:
+
+#Create a sample deployment and expose it on port 8080: 
+        kubectl create deployment hello-minikube --image=kicbase/echo-server:1.0
+        kubectl expose deployment hello-minikube --type=NodePort --port=8080
+
+# to launch the web browser by minikube
+       minikube service hello-minikube
+# List all deployments in the default namespace 
+          kubectl get deployments 
+# Imperative scaling: Increase or decrease replica count to 3
+        kubectl scale deployments/hello-minikube  --replicas=3 
+# View the underlying ReplicaSet created by the deployment 
+        kubectl get rs 

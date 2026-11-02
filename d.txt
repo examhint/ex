@@ -1,0 +1,115 @@
+Docker
+
+
+Create a subfolder and enter in the terminal(docker).
+ Cmd: docker build -t hello-world . or docker run --pull=always hello-world
+
+
+
+
+
+Create a container to display “amal jyothi college of engineering” using python(3.9).
+
+Create a file name without any extension (mean .txt).
+Create a n image name [you name] using
+Docker build -t [file name]
+
+
+Write a python script to declare the variable containing you  native place and using python code display message along my is [your place] in ten times
+
+
+
+
+
+2.using an alpine image create a file name hello.php in its app holder containing the text "this is the paragraph of text stored in file named hello.text".open that file from the app folder and display its contents by running the img as a container 
+
+FROM alpine:latest
+
+RUN mkdir -p /app
+
+RUN echo "this is the paragraph of text stored in file named hello.text" > /app/hello.php
+
+CMD ["cat", "/app/hello.php"]
+
+docker build -t alpine-hello .
+
+docker run --rm alpine-hello
+
+Output:this is the paragraph of text stored in file named hello.textwri
+
+3.Create a container to add two numbers .use two files the first file is addno.py to accept two numbers from the console and calculate the sum.2nd file is  dockerfile which contains the sufficient codes to call addno.py for finding the number .
+
+addno.py
+num1 = float(input("Enter first number: "))
+num2 = float(input("Enter second number: "))
+
+sum = num1 + num2
+
+print("Sum =", sum)
+
+
+Dockerfile
+
+FROM python:3.12-alpine
+
+WORKDIR /app
+
+COPY addno.py /app/
+
+CMD ["python", "addno.py"]
+
+
+docker build -t add-numbers .
+
+docker run -it --rm add-numbers
+
+output:
+Enter first number: 30
+Enter second number: 20
+Sum = 50.0
+
+
+
+
+
+
+
+Install kubectl on Windows
+
+https://kubernetes.io/docs/tasks/tools/install-kubectl-windows/
+
+
+
+Set-ExecutionPolicy Bypass -Scope Process -Force
+[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+
+
+
+choco --version
+
+choco install kubernetes-cli -y
+
+kubectl version --client
+
+
+
+minikube start
+https://minikube.sigs.k8s.io/docs/start/?arch=%2Fwindows%2Fx86-64%2Fstable%2F.exe+download
+
+
+To close the services in minikube
+
+Minikube delete –services
+
+Documentation
+Tutorials
+Kubernetes 101
+Module 5 - Scale up your app
+
+
+https://minikube.sigs.k8s.io/docs/tutorials/kubernetes_101/module5/
+
+
+Study on serverless overview and Also mentioned about FASS and AWS
+Develop a serverless lamda function that will trigger automatically when you upload an image to the uploads folder in the AWS S3 Bucket that will automatically create a thumbnail of the uploaded image in the thumbnails folder in the same S3 Buckets
